@@ -137,6 +137,8 @@ footer{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px;font-s
         <button data-room="living" aria-pressed="true">Living room</button>
         <button data-room="kitchen" aria-pressed="false">Kitchen</button>
         <button data-room="bedroom" aria-pressed="false">Bedroom</button>
+        <button data-room="hallway" aria-pressed="false">Hallway</button>
+        <button data-room="office" aria-pressed="false">Office</button>
       </div>
       <button class="btn primary" id="shareBtn">Share image</button>
     </div>
@@ -148,7 +150,7 @@ footer{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px;font-s
         <button data-light="south" aria-pressed="false">South-facing</button>
         <button data-light="evening" aria-pressed="false">Evening lamp</button>
       </div>
-      <button class="toggle" id="panelToggle" aria-pressed="true"><span class="knob"></span>Panelling &amp; dado</button>
+      <div class="row"><button class="toggle" id="stairToggle" aria-pressed="true" hidden><span class="knob"></span>Staircase</button><button class="toggle" id="panelToggle" aria-pressed="true"><span class="knob"></span>Panelling &amp; dado</button></div>
     </div>
   </div>
 
@@ -232,7 +234,12 @@ const all=()=>BASE.concat(custom);
 const byId=id=>all().find(c=>c.id===id);
 
 const ZONES=[["ceiling","Ceiling"],["walls","Walls"],["panelling","Panelling"],["woodwork","Woodwork"],["door","Door"]];
-const ROOMS={living:{name:"Living room",door:"Door"},kitchen:{name:"Kitchen",door:"Units & door"},bedroom:{name:"Bedroom",door:"Door"}};
+const ROOMS={living:{name:"Living room",door:"Door"},kitchen:{name:"Kitchen",door:"Units & door"},bedroom:{name:"Bedroom",door:"Door"},hallway:{name:"Hallway",door:"Front door"},office:{name:"Home office",door:"Door"}};
+const EXTRA=[["banister","Banister & newel"],["stairs","Staircase"],["shelves","Shelving"]];
+const ALLKEYS=ZONES.map(z=>z[0]).concat(EXTRA.map(z=>z[0]));
+function activeZones(){const pOn=state.panel!==false,out=[["ceiling","Ceiling"],["walls","Walls"]];if(pOn)out.push(["panelling","Panelling"]);out.push(["woodwork","Woodwork"],["door",ROOMS[state.room].door]);
+  if(state.room==="hallway"&&state.stairs!==false)out.push(EXTRA[0],EXTRA[1]);if(state.room==="office")out.push(EXTRA[2]);return out}
+const zc=k=>byId(state.z[k])||byId(state.z.woodwork);
 const PRESETS=[
  {name:"Quiet Georgian",z:{ceiling:"Wimborne White",walls:"Skimming Stone",panelling:"Elephant's Breath",woodwork:"Strong White",door:"Mole's Breath"}},
  {name:"Garden Room",z:{ceiling:"All White",walls:"Vert de Terre",panelling:"Breakfast Room Green",woodwork:"Pointing",door:"Studio Green"}},
@@ -272,6 +279,7 @@ function build(mode){
 
 /* room scene */
 function room(key){
+  const stairs=key==="hallway"&&state.stairs!==false;
   const L=(u,v)=>{const x=180*u,t=.5*x,b=560-.722*x;return [x,t+v*(b-t)]};
   const quad=(u0,u1,v0,v1)=>[L(u0,v0),L(u1,v0),L(u1,v1),L(u0,v1)].map(p=>p.map(n=>n.toFixed(1)).join(",")).join(" ");
   const boards=[];for(let x=-600;x<=1500;x+=70)boards.push(`<line x1="458" y1="229" x2="${x}" y2="760"/>`);
@@ -327,6 +335,65 @@ function room(key){
  <rect x="248" y="444" width="318" height="12" fill="#8b6e58" opacity=".85"/>
  <ellipse cx="346" cy="360" rx="54" ry="17" fill="#fbf9f4" stroke="#ddd6ca"/><ellipse cx="468" cy="360" rx="54" ry="17" fill="#fbf9f4" stroke="#ddd6ca"/>
 </g>`;
+  } else if(key==="hallway"){
+    floor="#c4b49e";fline="#8f7c66";
+    for(const y of [446,466,492,524,560])tiles+=`<line x1="0" y1="${y}" x2="800" y2="${y}"/>`;
+    const pendant=`<g pointer-events="none"><line x1="430" y1="0" x2="430" y2="58" stroke="#3a332c" stroke-width="2"/><path d="M406 84 Q430 52 454 84 Z" fill="#2f3a36"/><ellipse cx="430" cy="84" rx="24" ry="4" fill="#f6e7c4"/></g>`;
+    const rug=`<g pointer-events="none"><polygon points="250,470 560,470 600,548 196,548" fill="#7d4a3e"/><polygon points="262,476 550,476 586,542 210,542" fill="none" stroke="#d8b98c" stroke-width="3"/><polygon points="280,484 532,484 562,534 236,534" fill="none" stroke="#d8b98c" stroke-opacity=".5" stroke-width="1.5"/></g>`;
+    if(stairs){
+      const g=39.3,r=20,x0=250,n=14,k=r/g;
+      const yN=x=>430-r-(x-x0)*k, yH=x=>yN(x)-84, yS=x=>430-(x-x0)*k+28;
+      let saw=`${x0},430`,run="",spind="";
+      for(let i=0;i<n;i++){const x=x0+i*g,y=430-i*r;saw+=` ${x.toFixed(1)},${y-r} ${(x+g).toFixed(1)},${y-r}`;
+        run+=`<rect x="${(x+g*.12).toFixed(1)}" y="${y-r-4}" width="${(g*.88).toFixed(1)}" height="6" fill="#7d4a3e"/><rect x="${(x+g*.12).toFixed(1)}" y="${y-r+2}" width="${(g*.88).toFixed(1)}" height="1.5" fill="#000" opacity=".25"/><rect x="${(x+g*.1).toFixed(1)}" y="${y-r-4}" width="${(g*.04).toFixed(1)}" height="6" fill="#d8b98c"/><rect x="${(x+g*.96).toFixed(1)}" y="${y-r-4}" width="${(g*.04).toFixed(1)}" height="6" fill="#d8b98c"/>`;
+        for(const f of [.3,.78]){const sx=x+g*f;if(sx<x0+16)continue;const top=yH(sx)+7,bot=y-r;if(bot-top>8)spind+=`<rect x="${(sx-2).toFixed(1)}" y="${top.toFixed(1)}" width="4.5" height="${(bot-top).toFixed(1)}"/>`}}
+      const xe=x0+n*g, xf=x0+28/k;
+      let up="";for(const [a,b] of [[330,440],[460,580],[600,720]]){const t1=yS(a)+16,t2=yS(b)+16;if(t1<396)up+=`<polygon points="${a},${t1.toFixed(1)} ${b},${Math.max(t2,0).toFixed(1)} ${b},398 ${a},398"/>`}
+      back=`<polygon data-zone="woodwork" points="${x0},${(yN(x0)-16).toFixed(1)} 800,${(yN(800)-16).toFixed(1)} 800,${(yN(800)+r).toFixed(1)} ${x0},430"/>
+${frame(468,112,72,62,`<rect x="480" y="124" width="48" height="38" fill="#d9c9b4"/><circle cx="504" cy="143" r="11" fill="#5c6576"/>`)}
+<polygon data-zone="panelling" points="${xf.toFixed(1)},430 800,430 800,${yS(800).toFixed(1)}"/>
+<g class="pnl" fill="none" pointer-events="none" stroke="#000" stroke-opacity=".14" stroke-width="2">${up}</g>
+<polygon data-zone="stairs" points="${saw} ${xe.toFixed(1)},${(430-n*r)} 800,${yS(800).toFixed(1)} ${xf.toFixed(1)},430"/>
+<path d="M${saw.replace(/ /g," L")}" fill="none" stroke="#000" stroke-opacity=".22" stroke-width="1.5" pointer-events="none"/>
+<g pointer-events="none">${run}</g>
+<polygon points="${xf.toFixed(1)},430 800,${yS(800).toFixed(1)} 800,${(yS(800)+4).toFixed(1)} ${(xf+8).toFixed(1)},430" fill="#000" opacity=".12" pointer-events="none"/>
+<g data-zone="banister">${spind}
+<polygon points="${x0+8},${yH(x0+8).toFixed(1)} 800,${yH(800).toFixed(1)} 800,${(yH(800)+8).toFixed(1)} ${x0+8},${(yH(x0+8)+8).toFixed(1)}"/>
+<rect x="${x0-6}" y="${(yH(x0)-14).toFixed(1)}" width="24" height="${(430-yH(x0)+14).toFixed(1)}"/>
+<rect x="${x0-10}" y="${(yH(x0)-24).toFixed(1)}" width="32" height="12" rx="2"/><circle cx="${x0+6}" cy="${(yH(x0)-30).toFixed(1)}" r="8"/></g>
+<g pointer-events="none"><rect x="${x0-6}" y="${(yH(x0)-14).toFixed(1)}" width="5" height="${(430-yH(x0)+14).toFixed(1)}" fill="#000" opacity=".12"/><rect x="${x0-10}" y="${(yH(x0)-14).toFixed(1)}" width="32" height="3" fill="#000" opacity=".15"/></g>`;
+      front=pendant+rug;
+    } else {
+      back=`<g pointer-events="none"><circle cx="490" cy="196" r="64" fill="#b59a5a"/><circle cx="490" cy="196" r="56" fill="#dfe6ea"/><path d="M450 220 Q490 170 530 210 L530 230 Q490 252 450 236Z" fill="#c9d3d6" opacity=".7"/>
+ <rect x="660" y="214" width="120" height="7" rx="2" fill="#6b5340"/><g fill="#b59a5a"><circle cx="680" cy="226" r="4"/><circle cx="720" cy="226" r="4"/><circle cx="760" cy="226" r="4"/></g>
+ <path d="M672 226 Q664 262 668 318 L694 318 Q698 262 688 226Z" fill="#7a5a44"/><path d="M712 226 Q700 270 706 340 L736 340 Q740 270 728 226Z" fill="#46564f"/></g>`;
+      front=`<g pointer-events="none"><ellipse cx="490" cy="438" rx="120" ry="7" fill="#000" opacity=".18"/>
+ <rect x="384" y="300" width="212" height="12" fill="#7b6551"/><rect x="392" y="312" width="8" height="124" fill="#6b5340"/><rect x="580" y="312" width="8" height="124" fill="#6b5340"/><rect x="400" y="388" width="180" height="6" fill="#6b5340"/>
+ <rect x="414" y="252" width="10" height="48" fill="#c9b79a"/><polygon points="398,222 440,222 448,254 390,254" fill="#efe6d4"/>
+ <rect x="530" y="268" width="22" height="32" rx="6" fill="#d9d2c4"/><g fill="#5f7a63"><ellipse cx="536" cy="250" rx="6" ry="18" transform="rotate(-16 536 250)"/><ellipse cx="548" cy="248" rx="6" ry="20" transform="rotate(14 548 248)"/></g>
+ <rect x="456" y="290" width="54" height="10" fill="#a4553f"/><rect x="460" y="282" width="48" height="8" fill="#465a6e"/></g>`+pendant+rug;
+    }
+  } else if(key==="office"){
+    const books=(x,y,w)=>{let s="",cx=x;const cs=["#7a5a44","#46564f","#b5654b","#d9c9b4","#3e4b5c","#c4a27a","#5f7a63","#8a6a6a","#e7e1d4"];let i=Math.floor(x+y)%9;
+      while(cx<x+w-8){const bw=6+((cx*7+y)%7),bh=30+((cx*13+y)%14);if((cx*3+y)%11===0){cx+=14;continue}s+=`<rect x="${cx}" y="${y-bh}" width="${bw}" height="${bh}" fill="${cs[i++%9]}"/>`;cx+=bw+1}return s};
+    back=`<rect x="398" y="90" width="6" height="340" fill="#000" opacity=".07" pointer-events="none"/><rect x="596" y="90" width="6" height="340" fill="#000" opacity=".1" pointer-events="none"/>
+<g data-zone="shelves"><rect x="196" y="100" width="194" height="200"/><rect x="194" y="290" width="198" height="12"/><rect x="198" y="302" width="190" height="128"/></g>
+<rect x="208" y="112" width="170" height="178" fill="#000" opacity=".07" pointer-events="none"/>
+<g data-zone="shelves"><rect x="204" y="162" width="182" height="7"/><rect x="204" y="222" width="182" height="7"/></g>
+<g pointer-events="none"><rect x="204" y="169" width="182" height="3" fill="#000" opacity=".12"/><rect x="204" y="229" width="182" height="3" fill="#000" opacity=".12"/><rect x="194" y="302" width="198" height="3" fill="#000" opacity=".15"/>
+ ${books(214,162,110)}<rect x="340" y="140" width="22" height="22" rx="11" fill="#c4b8a6"/>${books(250,222,128)}<rect x="214" y="200" width="26" height="22" rx="3" fill="#d9d2c4"/>${books(222,290,70)}<rect x="320" y="270" width="40" height="20" rx="2" fill="#b59a5a"/>
+ <g fill="none" stroke="#000" stroke-opacity=".16" stroke-width="2"><rect x="208" y="314" width="80" height="102"/><rect x="298" y="314" width="80" height="102"/></g>
+ <g fill="#b59a5a"><rect x="280" y="356" width="4" height="18" rx="2"/><rect x="302" y="356" width="4" height="18" rx="2"/></g></g>
+${frame(444,140,112,92,`<rect x="456" y="152" width="88" height="68" fill="#e9dccb"/><rect x="468" y="164" width="30" height="44" fill="#a36e4c"/><circle cx="520" cy="182" r="14" fill="#5c6576"/>`)}
+${win(634,112,140,150)}`;
+    front=`<g pointer-events="none"><ellipse cx="700" cy="446" rx="110" ry="9" fill="#000" opacity=".18"/>
+ <rect x="604" y="346" width="192" height="12" fill="#8a6a4c"/><rect x="612" y="358" width="8" height="84" fill="#6b5340"/><rect x="780" y="358" width="8" height="84" fill="#6b5340"/><rect x="620" y="358" width="64" height="40" fill="#7b6551"/>
+ <rect x="694" y="316" width="64" height="30" rx="2" fill="#3a3b3e"/><polygon points="684,346 768,346 774,350 678,350" fill="#5a5b5e"/>
+ <rect x="640" y="300" width="6" height="46" fill="#3a332c"/><path d="M628 300 L660 300 L652 282 L636 282Z" fill="#2f3a36"/>
+ <ellipse cx="704" cy="476" rx="44" ry="7" fill="#000" opacity=".2"/><rect x="676" y="392" width="56" height="12" rx="4" fill="#5c594b"/><rect x="680" y="350" width="48" height="44" rx="6" fill="#6b6a59"/><rect x="700" y="404" width="8" height="62" fill="#3a3b3e"/><rect x="684" y="464" width="40" height="5" rx="2" fill="#3a3b3e"/>
+ <ellipse cx="500" cy="452" rx="30" ry="6" fill="#000" opacity=".2"/><path d="M482 414 L518 414 L512 452 L488 452Z" fill="#a4553f"/>
+ <g fill="#4f6a48"><ellipse cx="490" cy="384" rx="10" ry="28" transform="rotate(-20 490 384)"/><ellipse cx="510" cy="380" rx="10" ry="32" transform="rotate(18 510 380)"/><ellipse cx="500" cy="372" rx="9" ry="36"/></g>
+ <polygon points="230,478 470,478 500,548 190,548" fill="#cfc4b2"/><polygon points="242,484 460,484 486,542 204,542" fill="none" stroke="#a89880" stroke-width="3"/></g>`;
   } else {
     back=`<rect data-zone="woodwork" x="482" y="118" width="186" height="168" rx="2"/>
 <rect x="494" y="130" width="162" height="146" fill="url(#sky)" pointer-events="none"/>
@@ -365,13 +432,13 @@ function room(key){
 </defs>
 <polygon data-zone="ceiling" points="0,0 800,0 800,90 180,90"/>
 <polygon points="0,0 800,0 800,90 180,90" fill="url(#ceilShade)" pointer-events="none"/>
-<rect data-zone="walls" x="180" y="90" width="620" height="208"/>
-<rect data-zone="panelling" x="180" y="302" width="620" height="108"/>
+<rect data-zone="walls" x="180" y="90" width="620" height="340"/>
+${stairs?"":`<rect data-zone="panelling" x="180" y="302" width="620" height="108"/>
 <g class="pnl" fill="none" pointer-events="none"><g stroke="#000" stroke-opacity=".14" stroke-width="2">${panels}</g><g stroke="#fff" stroke-opacity=".22" stroke-width="1" transform="translate(1.5,1.5)">${panels}</g></g>
-<rect class="pnl" data-zone="woodwork" x="180" y="295" width="620" height="9"/>
+<rect class="pnl" data-zone="woodwork" x="180" y="295" width="620" height="9"/>`}
 <rect data-zone="woodwork" x="180" y="408" width="620" height="22"/>
 <rect x="180" y="408" width="620" height="2" fill="#000" fill-opacity=".12" pointer-events="none"/>
-<rect class="pnl" x="180" y="303" width="620" height="2" fill="#000" fill-opacity=".1" pointer-events="none"/>
+${stairs?"":`<rect class="pnl" x="180" y="303" width="620" height="2" fill="#000" fill-opacity=".1" pointer-events="none"/>`}
 <rect x="180" y="90" width="620" height="5" fill="#fff" fill-opacity=".25" pointer-events="none"/>
 
 ${back}
@@ -398,6 +465,7 @@ ${front}
 const sceneEl=document.getElementById("scene");sceneEl.innerHTML=room(state.room);
 document.getElementById("roomSel").addEventListener("click",e=>{const b=e.target.closest("button");if(b&&b.dataset.room!==state.room){state.room=b.dataset.room;sceneEl.innerHTML=room(state.room);render();}});
 sceneEl.addEventListener("click",e=>{const z=e.target.closest("[data-zone]");if(z){let k=z.dataset.zone;if(k==="panelling"&&state.panel===false)k="walls";state.zone=k;render();}});
+document.getElementById("stairToggle").addEventListener("click",()=>{state.stairs=state.stairs===false;sceneEl.innerHTML=room(state.room);render();});
 document.getElementById("panelToggle").addEventListener("click",()=>{state.panel=state.panel===false;if(!state.panel&&state.zone==="panelling")state.zone="walls";render();});
 
 const LIGHT={day:["#ffffff",0,0],north:["#c3d2e6",.32,.04],south:["#ffdca6",.3,0],evening:["#e9a55a",.42,.16]};
@@ -412,28 +480,30 @@ function stripFor(z){const s=el("span","strip");ZONES.forEach(([k])=>{const c=by
 
 function render(){
   ZONES[4][1]=ROOMS[state.room].door;
+  const AZ=activeZones();if(!AZ.some(z=>z[0]===state.zone))state.zone="walls";
+  $("stairToggle").hidden=state.room!=="hallway";$("stairToggle").setAttribute("aria-pressed",state.stairs!==false);
   $("roomSel").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.room===state.room));
   // scene fills
   const pOn=state.panel!==false;sceneEl.classList.toggle("nopanel",!pOn);$("panelToggle").setAttribute("aria-pressed",pOn);
-  ZONES.forEach(([k])=>{const c=byId(state.z[(k==="panelling"&&!pOn)?"walls":k]);sceneEl.querySelectorAll(`[data-zone="${k}"]`).forEach(n=>{n.setAttribute("fill",c.hex);n.classList.toggle("hl",k===state.zone)})});
+  ALLKEYS.forEach(k=>{const c=zc((k==="panelling"&&!pOn)?"walls":k);sceneEl.querySelectorAll(`[data-zone="${k}"]`).forEach(n=>{n.setAttribute("fill",c.hex);n.classList.toggle("hl",k===state.zone)})});
   const [lc,lo,ld]=LIGHT[state.light];$("lightTint").setAttribute("fill",lc);$("lightTint").setAttribute("opacity",lo);$("lightDim").setAttribute("opacity",ld);
   $("light").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.light===state.light));
   // zones
   const zs=$("zones");zs.replaceChildren();
-  ZONES.forEach(([k,label])=>{if(k==="panelling"&&!pOn)return;const c=byId(state.z[k]);const b=el("button","zone");b.setAttribute("aria-pressed",k===state.zone);
+  AZ.forEach(([k,label])=>{const c=zc(k);const b=el("button","zone");b.setAttribute("aria-pressed",k===state.zone);
     const d=el("span","dot");d.style.background=c.hex;const t=el("div");t.append(el("b",null,label),el("span",null,c.name));b.append(d,t);
     b.onclick=()=>{state.zone=k;render()};zs.append(b)});
-  $("pickTitle").textContent="Colours for the "+ZONES.find(z=>z[0]===state.zone)[1].toLowerCase();
+  $("pickTitle").textContent="Colours for the "+AZ.find(z=>z[0]===state.zone)[1].toLowerCase();
   // filters
   const fs=$("filters");fs.replaceChildren();
   [["all","All"]].concat(FAM).forEach(([k,l])=>{if(k==="yours"&&!custom.length)return;const b=el("button",null,l);b.setAttribute("aria-pressed",state.fam===k);b.onclick=()=>{state.fam=k;render()};fs.append(b)});
   // swatches
   const sw=$("swatches");sw.replaceChildren();
-  const cur=state.z[state.zone];const qq=q.trim().toLowerCase();
+  const cur=zc(state.zone).id;const qq=q.trim().toLowerCase();
   const list=all().filter(c=>(state.fam==="all"||c.family===state.fam)&&(!qq||c.name.toLowerCase().includes(qq)||c.code.toLowerCase().includes(qq)||c.hex.toLowerCase().includes(qq)));
   if(!list.length)sw.append(el("p","empty","No colours match that search."));
   list.forEach(c=>{const b=el("button","sw");b.setAttribute("aria-current",c.id===cur);b.setAttribute("aria-label",c.name+", "+c.code);
-    const ch=el("div","chip");ch.style.background=c.hex;const used=ZONES.filter(([k])=>state.z[k]===c.id).length;if(used){const i=el("i",null,"in room");ch.append(i)}
+    const ch=el("div","chip");ch.style.background=c.hex;const used=AZ.filter(([k])=>zc(k).id===c.id).length;if(used){const i=el("i",null,"in room");ch.append(i)}
     b.append(ch,el("b",null,c.name),el("small",null,c.code));
     b.onclick=()=>{state.z[state.zone]=c.id;state.focus=c.id;render()};sw.append(b)});
   // detail
@@ -445,7 +515,7 @@ function render(){
   info.append(r);dt.append(big,info);
   // current list
   const cl=$("current");cl.replaceChildren();
-  ZONES.forEach(([k,l])=>{if(k==="panelling"&&!pOn)return;const c=byId(state.z[k]);const li=el("li");li.append(el("span",null,l+": "+c.name),el("span",null,`${c.code} · LRV ${lrv(c.hex)}`));cl.append(li)});
+  AZ.forEach(([k,l])=>{const c=zc(k);const li=el("li");li.append(el("span",null,l+": "+c.name),el("span",null,`${c.code} · LRV ${lrv(c.hex)}`));cl.append(li)});
   // presets
   const pr=$("presets");pr.replaceChildren();
   PRESETS.forEach(p=>{const z=presetIds(p);pr.append(schemeRow(p.name,z,[["Use",()=>{state.z={...z};render();toast(p.name+" applied.")}]]))});
@@ -459,7 +529,7 @@ function schemeRow(name,z,acts){const row=el("div","scheme");row.append(stripFor
 
 $("search").addEventListener("input",e=>{q=e.target.value;render()});
 $("saveScheme").onclick=()=>{const nm=$("schemeName").value.trim()||"Scheme "+(saved.length+1);saved.unshift({name:nm,z:{...state.z}});store.set("pr_saved",saved);$("schemeName").value="";render();toast("Saved "+nm+".")};
-$("copyScheme").onclick=()=>{const txt=ZONES.filter(([k])=>k!=="panelling"||state.panel!==false).map(([k,l])=>{const c=byId(state.z[k]);return `${l}: ${c.name} (${c.code}, ${c.hex}, LRV ${lrv(c.hex)})`}).join("\n");
+$("copyScheme").onclick=()=>{const txt=activeZones().map(([k,l])=>{const c=zc(k);return `${l}: ${c.name} (${c.code}, ${c.hex}, LRV ${lrv(c.hex)})`}).join("\n");
   const fallback=()=>{const ta=document.createElement("textarea");ta.value=txt;document.body.append(ta);ta.select();try{document.execCommand("copy")}catch(e){}ta.remove();toast("Scheme copied.")};
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast("Scheme copied."),fallback)}else fallback()};
 
@@ -468,7 +538,7 @@ $("cHex").addEventListener("input",e=>{let v=e.target.value.trim();if(v&&v[0]!==
 $("cAdd").onclick=()=>{let v=$("cHex").value.trim();if(v&&v[0]!=="#")v="#"+v;
   if(!/^#[0-9A-F]{6}$/i.test(v)){toast("Enter a six-digit hex code, like #7A8F84.");return}
   const id="cu"+Date.now();const c={id,code:"Custom",name:$("cName").value.trim()||"Custom "+v.toUpperCase(),hex:v.toUpperCase(),family:"yours"};
-  custom.push(c);store.set("pr_custom",custom);state.z[state.zone]=id;state.fam="yours";$("cName").value="";render();toast(c.name+" added and applied to the "+state.zone+".")};
+  custom.push(c);store.set("pr_custom",custom);state.z[state.zone]=id;state.fam="yours";$("cName").value="";render();toast(c.name+" added and applied to the "+activeZones().find(z=>z[0]===state.zone)[1].toLowerCase()+".")};
 
 /* share image */
 let downloads=null,shareBlob=null;
@@ -487,11 +557,11 @@ async function makeShare(){
   x.fillStyle="#f5f4f0";x.fillRect(0,0,W,H);x.drawImage(img,0,0,W,SH);
   x.fillStyle="#1c2321";x.font='400 64px "Instrument Serif", Georgia, serif';x.textBaseline="alphabetic";x.fillText(ROOMS[state.room].name,64,SH+96);
   x.fillStyle="#5d6763";x.font='500 24px Figtree, system-ui, sans-serif';x.textAlign="right";x.fillText("Pairing Room",W-64,SH+92);x.textAlign="left";
-  const zs=ZONES.filter(([k])=>k!=="panelling"||state.panel!==false);const gap=24,tw=(W-128-gap*(zs.length-1))/zs.length,y0=SH+136;
-  zs.forEach(([k,l],i)=>{const col=byId(state.z[k]);const tx=64+i*(tw+gap);
+  const zs=activeZones();const gap=24,tw=(W-128-gap*(zs.length-1))/zs.length,y0=SH+136;
+  zs.forEach(([k,l],i)=>{const col=zc(k);const tx=64+i*(tw+gap);
     x.fillStyle=col.hex;x.fillRect(tx,y0,tw,170);x.strokeStyle="rgba(0,0,0,.1)";x.lineWidth=2;x.strokeRect(tx+1,y0+1,tw-2,168);
-    x.fillStyle="#5d6763";x.font='600 19px Figtree, system-ui, sans-serif';x.fillText(l.toUpperCase(),tx,y0+206);
-    x.fillStyle="#1c2321";x.font='600 26px Figtree, system-ui, sans-serif';x.fillText(fit(x,col.name,tw),tx,y0+242);
+    x.fillStyle="#5d6763";x.font='600 19px Figtree, system-ui, sans-serif';x.fillText(fit(x,l.toUpperCase(),tw),tx,y0+206);
+    x.fillStyle="#1c2321";x.font=(zs.length>5?'600 22px':'600 26px')+' Figtree, system-ui, sans-serif';x.fillText(fit(x,col.name,tw),tx,y0+242);
     x.fillStyle="#5d6763";x.font='400 21px "IBM Plex Mono", ui-monospace, monospace';x.fillText(col.code,tx,y0+274)});
   x.fillStyle="#8a928e";x.font='400 18px Figtree, system-ui, sans-serif';x.fillText("Colour names and numbers belong to Farrow & Ball. On-screen colours are approximate; always test a sample.",64,H-34);
   return new Promise(r=>c.toBlob(b=>r(b),"image/png"));
