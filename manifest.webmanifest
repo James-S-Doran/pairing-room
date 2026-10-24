@@ -1,0 +1,16 @@
+{
+  "name": "Pairing Room",
+  "short_name": "Pairing Room",
+  "description": "Pair paint colours and preview them on the walls, ceiling, panelling, woodwork and door of a mocked-up room.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eceeec",
+  "theme_color": "#2e4a44",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
